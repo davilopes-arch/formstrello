@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Novo Card · Trello</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Archivo+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg:#f5f3ee;
+  --surface:#fefcf8;
+  --surface2:#f0ede6;
+  --border:#ddd9d0;
+  --border2:#c8c3b8;
+  --ink:#1a1714;
+  --ink2:#5a5550;
+  --ink3:#9a9590;
+  --green:#1a6b3c;
+  --green-bg:#e8f5ee;
+  --green-bd:#a8d5bc;
+  --red:#8b1a1a;
+  --red-bg:#fdf0f0;
+  --yellow:#7a5c00;
+  --yellow-bg:#fef8e8;
+  --blue:#1a3f6b;
+  --blue-bg:#eef4fc;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px}
+body{background:var(--bg);color:var(--ink);font-family:'Archivo',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+
+.page{position:relative;z-index:1;max-width:660px;margin:0 auto;padding:48px 24px 80px}
+
+/* HEADER */
+.hdr{margin-bottom:40px}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);border:1px solid var(--border2);padding:4px 12px;border-radius:3px;margin-bottom:18px}
+.hdr-badge::before{content:'●';color:var(--green);font-size:.5rem}
+.hdr h1{font-size:2.6rem;font-weight:900;letter-spacing:-.04em;line-height:1.05;color:var(--ink);margin-bottom:8px;text-align:center}
+.hdr h1 em{font-style:normal;color:#ff5500}
+.hdr p{font-size:.88rem;color:var(--ink2);line-height:1.6}
+
+/* STATES */
+#st-loading,#st-error,#st-success,#st-login,#st-frete-success{display:none;text-align:center;padding:48px 24px}
+#st-loading.on,#st-error.on,#st-success.on,#st-login.on,#st-frete-success.on{display:block}
+#st-form.off,#st-frete.off{display:none}
+
+/* LOGIN */
+.login-box{background:var(--surface);border:2px solid var(--ink);border-radius:10px;padding:40px 32px;max-width:400px;margin:0 auto;text-align:left;box-shadow:6px 6px 0 var(--ink)}
+.login-box h2{font-size:1.4rem;font-weight:900;letter-spacing:-.03em;margin-bottom:6px}
+.login-box p{font-size:.82rem;color:var(--ink2);margin-bottom:24px;line-height:1.6}
+.login-input{width:100%;font-family:'Archivo',sans-serif;font-size:.95rem;font-weight:500;padding:12px 14px;border:1.5px solid var(--border2);border-radius:6px;outline:none;background:var(--bg);color:var(--ink);transition:border .18s}
+.login-input:focus{border-color:var(--ink)}
+.login-input.err{border-color:var(--red)}
+.login-err{font-family:'Archivo Mono',monospace;font-size:.65rem;color:var(--red);margin-top:6px;display:none}
+.login-err.on{display:block}
+.btn-login{margin-top:16px;width:100%;font-family:'Archivo',sans-serif;font-size:.9rem;font-weight:700;padding:13px;background:var(--ink);color:var(--surface);border:2px solid var(--ink);border-radius:5px;cursor:pointer;transition:all .18s;box-shadow:3px 3px 0 var(--border2)}
+.btn-login:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--border2)}
+
+/* BADGE USUÁRIO */
+.user-badge{display:inline-flex;align-items:center;gap:8px;font-family:'Archivo Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--ink2);border:1px solid var(--border2);padding:5px 12px;border-radius:3px;margin-bottom:18px;cursor:pointer;transition:all .15s}
+.user-badge:hover{border-color:var(--ink);color:var(--ink)}
+.user-badge::before{content:'●';color:var(--green);font-size:.5rem}
+.user-badge-email{font-weight:600}
+.user-badge-sair{color:var(--ink3);font-size:.58rem;text-decoration:underline;text-underline-offset:3px;margin-left:4px}
+
+.spinner-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-label{font-family:'Archivo Mono',monospace;font-size:.72rem;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase}
+
+/* FORM FIELDS */
+.form-body{display:flex;flex-direction:column;gap:0}
+.field{border-bottom:1px solid var(--border);padding:22px 0;position:relative;transition:border-color .2s}
+.field:first-child{border-top:1px solid var(--border)}
+.field:focus-within{border-bottom-color:var(--ink)}
+.field-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.field-label{font-family:'Archivo Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink3);font-weight:500;display:flex;align-items:center;gap:4px}
+.req{color:var(--red);font-size:.7rem}
+.field-hint{font-size:.72rem;color:var(--ink3)}
+
+input[type=text],input[type=number],textarea{width:100%;font-family:'Archivo',sans-serif;font-size:1rem;font-weight:500;background:transparent;border:none;outline:none;color:var(--ink);resize:none;padding:0}
+input[type=text]::placeholder,input[type=number]::placeholder,textarea::placeholder{color:var(--ink3);font-weight:400}
+textarea{min-height:80px;line-height:1.6}
+
+/* EQUIPE BOXES */
+.eq-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.eq-box{border:1.5px solid var(--border2);border-radius:8px;padding:14px 8px;text-align:center;cursor:pointer;transition:all .18s;background:var(--surface);user-select:none}
+.eq-box:hover{border-color:var(--border2);box-shadow:0 2px 8px #0001;transform:translateY(-1px)}
+.eq-box .eq-ico{font-size:1.6rem;display:block;margin-bottom:6px}
+.eq-box .eq-name{font-size:.75rem;font-weight:600;color:var(--ink2)}
+.eq-box.sel{border-width:2px;border-color:var(--ink);background:var(--surface2);box-shadow:3px 3px 0 var(--ink)}
+.eq-box.sel .eq-name{color:var(--ink)}
+
+#sit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+#sit-modal-bg.open{display:flex}
+
+/* RCA MODAL */
+#rca-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+#rca-modal-bg.open{display:flex}
+#rca-modal{background:var(--surface);border:2px solid var(--ink);border-radius:10px;width:100%;max-width:580px;max-height:80vh;display:flex;flex-direction:column;box-shadow:6px 6px 0 var(--ink);animation:popIn .2s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.rca-modal-head{padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.rca-modal-head h3{font-size:1rem;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.rca-search{width:100%;font-family:'Archivo',sans-serif;font-size:.9rem;padding:8px 12px;border:1.5px solid var(--border2);border-radius:6px;outline:none;background:var(--bg);transition:border .18s}
+.rca-search:focus{border-color:var(--ink)}
+.rca-modal-body{overflow-y:auto;padding:12px 20px 16px;flex:1}
+.rca-eq-group{margin-bottom:16px}
+.rca-eq-title{font-family:'Archivo Mono',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.rca-eq-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.rca-names-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rca-name-btn{border:1.5px solid var(--border2);border-radius:5px;padding:8px 12px;cursor:pointer;transition:all .15s;font-size:.8rem;font-weight:500;color:var(--ink2);background:var(--surface);text-align:left}
+.rca-name-btn:hover{border-color:var(--ink);color:var(--ink);background:var(--surface2)}
+.rca-name-btn.active{border-color:var(--ink);border-width:2px;background:var(--ink);color:var(--surface);font-weight:700}
+.rca-modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.rca-selected-label{font-size:.78rem;color:var(--ink2)}
+.rca-selected-label strong{color:var(--ink);font-weight:700}
+.btn-confirm-rca{font-family:'Archivo',sans-serif;font-size:.82rem;font-weight:700;padding:9px 22px;background:var(--ink);color:var(--surface);border:none;border-radius:5px;cursor:pointer;transition:all .15s;box-shadow:2px 2px 0 var(--border2)}
+.btn-confirm-rca:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--border2)}
+.btn-cancel-rca{font-family:'Archivo Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;background:none;border:none;color:var(--ink3);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.btn-cancel-rca:hover{color:var(--ink)}
+
+/* RCA DISPLAY */
+.rca-display{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:6px;cursor:pointer;transition:all .18s}
+.rca-display:hover{border-color:var(--ink)}
+.rca-display-name{font-size:.95rem;font-weight:600;color:var(--ink)}
+.rca-display-eq{font-family:'Archivo Mono',monospace;font-size:.6rem;color:var(--ink3)}
+.rca-display-arrow{font-size:.75rem;color:var(--ink3)}
+.rca-placeholder{color:var(--ink3);font-weight:400;font-size:.95rem}
+.toggle-row{display:flex;gap:10px}
+.toggle-opt{flex:1;border:1.5px solid var(--border2);border-radius:6px;padding:12px;text-align:center;cursor:pointer;transition:all .18s;font-weight:600;font-size:.9rem;color:var(--ink2);background:var(--surface)}
+.toggle-opt:hover{border-color:var(--ink);color:var(--ink)}
+.toggle-opt.sel{border-color:var(--ink);border-width:2px;background:var(--ink);color:var(--surface)}
+.toggle-opt .tog-icon{font-size:1.4rem;display:block;margin-bottom:4px}
+
+/* SITUAÇÃO/EQUIPE — etiquetas do board */
+.et-grid{display:flex;flex-wrap:wrap;gap:8px}
+.et-btn{border:1.5px solid var(--border2);border-radius:4px;padding:7px 14px;cursor:pointer;transition:all .18s;font-size:.78rem;font-weight:500;color:var(--ink2);background:var(--surface);display:flex;align-items:center;gap:6px;user-select:none}
+.et-btn:hover{border-color:var(--ink);color:var(--ink)}
+.et-btn.sel{border-width:2px;font-weight:700;background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.et-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.et-loading{font-family:'Archivo Mono',monospace;font-size:.68rem;color:var(--ink3);letter-spacing:.08em;display:flex;align-items:center;gap:8px}
+.mini-spin{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--ink3);border-radius:50%;animation:spin .7s linear infinite}
+
+/* RCA AUTOCOMPLETE */
+.rca-wrap{position:relative}
+.rca-sugg{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--surface);border:1.5px solid var(--ink);border-radius:6px;z-index:50;overflow:hidden;box-shadow:4px 4px 0 var(--ink);display:none}
+.rca-sugg.open{display:block}
+.rca-opt{padding:10px 16px;font-size:.85rem;cursor:pointer;transition:background .12s;display:flex;align-items:center;justify-content:space-between}
+.rca-opt:hover{background:var(--surface2)}
+.rca-opt-eq{font-family:'Archivo Mono',monospace;font-size:.6rem;color:var(--ink3)}
+
+/* CHAR COUNT */
+.char-wrap{display:flex;justify-content:flex-end;margin-top:6px}
+.char-c{font-family:'Archivo Mono',monospace;font-size:.6rem;color:var(--ink3)}
+.char-c.warn{color:var(--yellow)}.char-c.over{color:var(--red)}
+
+/* PREVIEW */
+.preview-wrap{background:var(--surface);border:1.5px solid var(--border2);border-radius:8px;padding:20px;margin-top:32px;position:relative;overflow:hidden}
+.preview-wrap::before{content:'PRÉVIA DO CARD';position:absolute;top:12px;right:16px;font-family:'Archivo Mono',monospace;font-size:.55rem;letter-spacing:.14em;color:var(--ink3)}
+.preview-list{font-family:'Archivo Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--green);background:var(--green-bg);border:1px solid var(--green-bd);padding:3px 10px;border-radius:3px;margin-bottom:12px;display:inline-block}
+.preview-title{font-size:1rem;font-weight:700;margin-bottom:10px;color:var(--ink);line-height:1.35}
+.preview-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.preview-tag{font-size:.65rem;font-weight:600;padding:3px 10px;border-radius:3px;letter-spacing:.04em}
+.preview-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:10px}
+.preview-meta-item{font-size:.68rem;color:var(--ink3);font-family:'Archivo Mono',monospace}
+.preview-meta-item strong{color:var(--ink2)}
+.preview-empty{font-size:.78rem;color:var(--ink3);font-style:italic}
+
+/* VALIDATION */
+.field-err{font-size:.68rem;color:var(--red);margin-top:6px;display:none;font-family:'Archivo Mono',monospace}
+.field.invalid .field-label{color:var(--red)}
+.field.invalid .field-err{display:block}
+.field.invalid input,.field.invalid textarea{color:var(--ink)}
+
+/* SUBMIT */
+.submit-area{margin-top:32px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.btn-submit{font-family:'Archivo',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:.02em;padding:14px 32px;background:var(--ink);color:var(--surface);border:2px solid var(--ink);border-radius:5px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:8px;box-shadow:3px 3px 0 var(--border2)}
+.btn-submit:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--border2)}
+.btn-submit:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--border2)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:3px 3px 0 var(--border2)}
+.btn-reset{font-family:'Archivo Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;background:none;border:none;color:var(--ink3);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.btn-reset:hover{color:var(--ink)}
+
+/* SUCCESS */
+.success-box{background:var(--green-bg);border:2px solid var(--green-bd);border-radius:10px;padding:40px 32px;text-align:center}
+.success-box h2{font-size:1.6rem;font-weight:900;color:var(--green);margin-bottom:8px}
+.success-box p{font-size:.85rem;color:var(--ink2);line-height:1.7;margin-bottom:16px}
+.success-link{font-family:'Archivo Mono',monospace;font-size:.7rem;color:var(--blue);word-break:break-all;text-decoration:underline;text-underline-offset:3px}
+.btn-novo{margin-top:20px;display:inline-flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-size:.85rem;font-weight:700;padding:12px 28px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;transition:all .18s;box-shadow:3px 3px 0 #0d3d21}
+.btn-novo:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 #0d3d21}
+
+/* ERROR */
+.error-box{background:var(--red-bg);border:2px solid #e8b4b4;border-radius:10px;padding:32px;text-align:center}
+.error-box h2{font-size:1.4rem;font-weight:900;color:var(--red);margin-bottom:8px}
+.error-box p{font-size:.82rem;color:var(--ink2);line-height:1.7}
+.btn-retry{margin-top:16px;display:inline-flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-size:.82rem;font-weight:700;padding:10px 24px;background:var(--red);color:#fff;border:none;border-radius:5px;cursor:pointer}
+
+/* SECTION DIVIDER */
+.section-title{font-family:'Archivo Mono',monospace;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);padding:20px 0 0;margin-bottom:-8px}
+
+/* BOTÕES RÁPIDOS GRID */
+.quick-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+@media(max-width:480px){.quick-btns{grid-template-columns:1fr}}
+
+/* BOTÃO CADASTRO */
+.btn-cadastro{display:flex;align-items:center;gap:10px;width:100%;padding:14px 18px;background:var(--blue-bg);border:2px solid #5a9fd4;border-radius:8px;cursor:pointer;transition:all .18s;font-family:'Archivo',sans-serif;font-size:.88rem;font-weight:700;color:var(--blue);box-shadow:3px 3px 0 #5a9fd4}
+.btn-cadastro:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 #5a9fd4}
+
+/* PÁGINA CADASTRO */
+#st-cadastro{display:none}
+#st-cadastro.on{display:block}
+#st-cadastro-success{display:none;text-align:center;padding:48px 24px}
+#st-cadastro-success.on{display:block}
+.cadastro-back{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);background:none;border:1px solid var(--border2);border-radius:4px;padding:5px 12px;cursor:pointer;transition:all .15s;margin-bottom:28px}
+.cadastro-back:hover{border-color:var(--ink);color:var(--ink)}
+.cadastro-header{margin-bottom:32px}
+.cadastro-header h2{font-size:2rem;font-weight:900;letter-spacing:-.04em;line-height:1.05;margin-bottom:6px}
+.cadastro-header h2 em{font-style:normal;color:var(--blue)}
+.cadastro-header p{font-size:.85rem;color:var(--ink2);line-height:1.6}
+.cadastro-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);background:var(--blue-bg);border:1px solid #5a9fd4;padding:4px 12px;border-radius:3px;margin-bottom:14px};align-items:center;gap:10px;width:100%;padding:14px 18px;background:var(--yellow-bg);border:2px solid #e8c840;border-radius:8px;cursor:pointer;transition:all .18s;font-family:'Archivo',sans-serif;font-size:.88rem;font-weight:700;color:var(--yellow);box-shadow:3px 3px 0 #e8c840;margin-bottom:28px}
+.btn-frete:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 #e8c840}
+.btn-frete-icon{font-size:1.4rem;flex-shrink:0}
+.btn-frete-text{text-align:left}
+.btn-frete-title{display:block;font-size:.9rem;font-weight:800;letter-spacing:-.01em}
+.btn-frete-sub{display:block;font-size:.7rem;font-weight:400;color:var(--ink3);margin-top:1px}
+.btn-frete-arrow{margin-left:auto;font-size:.9rem;color:var(--yellow);opacity:.7}
+
+/* PÁGINA FRETE */
+#st-frete{display:none}
+#st-frete.on{display:block}
+#st-frete-success{display:none;text-align:center;padding:48px 24px}
+#st-frete-success.on{display:block}
+
+.frete-back{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);background:none;border:1px solid var(--border2);border-radius:4px;padding:5px 12px;cursor:pointer;transition:all .15s;margin-bottom:28px}
+.frete-back:hover{border-color:var(--ink);color:var(--ink)}
+
+.frete-header{margin-bottom:32px}
+.frete-header h2{font-size:2rem;font-weight:900;letter-spacing:-.04em;line-height:1.05;margin-bottom:6px}
+.frete-header h2 em{font-style:normal;color:#e8a000}
+.frete-header p{font-size:.85rem;color:var(--ink2);line-height:1.6}
+
+.frete-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);background:var(--yellow-bg);border:1px solid #e8c840;padding:4px 12px;border-radius:3px;margin-bottom:14px}
+
+@media(max-width:500px){.page{padding:28px 14px 60px}.hdr h1{font-size:2rem}.toggle-row{flex-direction:column}.preview-meta{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-badge">Trello · CADASTRO / DEMANDAS CX</div>
+    <div id="user-badge-wrap" style="display:none">
+      <div class="user-badge" onclick="sair()">
+        <span class="user-badge-email" id="user-badge-email"></span>
+        <span class="user-badge-sair">sair</span>
+      </div>
+    </div>
+    <h1>Novo<br><em>Card</em></h1>
+    <p>Preencha os campos abaixo para criar um card automaticamente na lista <strong>A FAZER</strong> com as etiquetas e campos personalizados corretos.</p>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="st-login">
+    <div class="login-box">
+      <h2>Identificação</h2>
+      <p>Informe seu e-mail para continuar. Ele será registrado no card do Trello como responsável pelo cadastro.</p>
+      <input class="login-input" type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')entrar()">
+      <div class="login-err" id="login-err">Informe um e-mail válido.</div>
+      <button class="btn-login" onclick="entrar()">Entrar →</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="st-loading">
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="spinner-label">Conectando ao Trello...</div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="st-error">
+    <div class="error-box">
+      <h2>Erro de conexão</h2>
+      <p id="err-msg">Não foi possível conectar ao Trello.</p>
+      <button class="btn-retry" onclick="init()">↻ Tentar novamente</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="st-success">
+    <div class="success-box">
+      <div style="font-size:3rem;margin-bottom:16px">✅</div>
+      <h2>Card criado!</h2>
+      <p>O card foi adicionado à lista <strong>A FAZER</strong> com todos os campos preenchidos.</p>
+      <a id="success-link" href="#" target="_blank" class="success-link">Abrir no Trello →</a><br>
+      <button class="btn-novo" onclick="resetForm()">+ Criar outro card</button>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div id="st-form">
+
+    <!-- BOTÕES ACESSO RÁPIDO -->
+    <div class="quick-btns">
+      <button class="btn-frete" onclick="showFrete()">
+        <span class="btn-frete-icon">🚚</span>
+        <span class="btn-frete-text">
+          <span class="btn-frete-title">Cotar Frete</span>
+          <span class="btn-frete-sub">Solicitar orçamento de frete</span>
+        </span>
+        <span class="btn-frete-arrow">→</span>
+      </button>
+      <button class="btn-cadastro" onclick="showCadastro()">
+        <span class="btn-frete-icon">📋</span>
+        <span class="btn-frete-text">
+          <span class="btn-frete-title">Cadastro</span>
+          <span class="btn-frete-sub" style="color:var(--ink3)">Solicitar novo cadastro</span>
+        </span>
+        <span class="btn-frete-arrow" style="color:var(--blue)">→</span>
+      </button>
+    </div>
+
+    <div class="form-body">
+
+      <!-- NOME E TÍTULO -->
+      <div class="field" id="f-nome">
+        <div class="field-head">
+          <div class="field-label">Nome e Título <span class="req">*</span></div>
+          <div class="field-hint">título do card no Trello</div>
+        </div>
+        <input type="text" id="i-nome" placeholder="Ex: João Silva – Pedido #12345 com atraso na entrega" oninput="updatePreview()">
+        <div class="field-err">Campo obrigatório.</div>
+      </div>
+
+      <!-- EQUIPE -->
+      <div class="field" id="f-equipe">
+        <div class="field-head">
+          <div class="field-label">Equipe <span class="req">*</span></div>
+        </div>
+        <div class="eq-row">
+          <div class="eq-box" id="eq-farol"    onclick="selectEquipe('Farol',   '🗼')"><span class="eq-ico">🗼</span><span class="eq-name">Farol</span></div>
+          <div class="eq-box" id="eq-cactus"   onclick="selectEquipe('Cactus',  '🌵')"><span class="eq-ico">🌵</span><span class="eq-name">Cactus</span></div>
+          <div class="eq-box" id="eq-girassol" onclick="selectEquipe('Girassol','🌻')"><span class="eq-ico">🌻</span><span class="eq-name">Girassol</span></div>
+          <div class="eq-box" id="eq-raio"     onclick="selectEquipe('Raio',    '⚡')"><span class="eq-ico">⚡</span><span class="eq-name">Raio</span></div>
+          <div class="eq-box" id="eq-clareou"  onclick="selectEquipe('Clareou', '🌅')"><span class="eq-ico">🌅</span><span class="eq-name">Clareou</span></div>
+        </div>
+        <div class="field-err">Selecione a equipe.</div>
+      </div>
+
+      <!-- RCA -->
+      <div class="field" id="f-rca">
+        <div class="field-head">
+          <div class="field-label">RCA <span class="req">*</span></div>
+          <div class="field-hint">consultor responsável</div>
+        </div>
+        <div class="rca-display" onclick="openRCAModal()" id="rca-display">
+          <div>
+            <div id="rca-display-name" class="rca-placeholder">Selecionar consultor...</div>
+            <div id="rca-display-eq" class="rca-display-eq"></div>
+          </div>
+          <div class="rca-display-arrow">▼</div>
+        </div>
+        <div class="field-err">Selecione o RCA responsável.</div>
+      </div>
+
+      <!-- ID INTEGRADOR -->
+      <div class="field" id="f-idint">
+        <div class="field-head">
+          <div class="field-label">ID (Integrador) <span class="req">*</span></div>
+          <div class="field-hint">código do integrador</div>
+        </div>
+        <input type="text" id="i-idint" placeholder="Ex: INT-00123" oninput="updatePreview()">
+        <div class="field-err">Campo obrigatório.</div>
+      </div>
+
+      <!-- PROTOCOLO -->
+      <div class="field" id="f-prot">
+        <div class="field-head">
+          <div class="field-label">Protocolo</div>
+          <div class="field-hint">opcional</div>
+        </div>
+        <input type="text" id="i-prot" placeholder="Ex: PROT-2024-00456" oninput="updatePreview()">
+      </div>
+
+      <!-- ORIGEM -->
+      <div class="field" id="f-orig">
+        <div class="field-head">
+          <div class="field-label">Origem <span class="req">*</span></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-opt" id="tog-matriz" onclick="selectOrigem('MATRIZ')">
+            <span class="tog-icon">🏢</span>
+            Matriz
+          </div>
+          <div class="toggle-opt" id="tog-filial" onclick="selectOrigem('FILIAL')">
+            <span class="tog-icon">🏬</span>
+            Filial
+          </div>
+        </div>
+        <div class="field-err">Selecione a origem.</div>
+      </div>
+
+      <!-- NÚMERO DO PEDIDO -->
+      <div class="field" id="f-pedido">
+        <div class="field-head">
+          <div class="field-label">Número do Pedido <span class="req">*</span></div>
+        </div>
+        <input type="text" id="i-pedido" placeholder="Ex: 98765" oninput="updatePreview()">
+        <div class="field-err">Campo obrigatório.</div>
+      </div>
+
+      <!-- NF FUTURA -->
+      <div class="field" id="f-nff">
+        <div class="field-head">
+          <div class="field-label">NF Futura</div>
+          <div class="field-hint">opcional</div>
+        </div>
+        <input type="text" id="i-nff" placeholder="Número da NF Futura" oninput="updatePreview()">
+      </div>
+
+      <!-- NF DE SAÍDA -->
+      <div class="field" id="f-nfs">
+        <div class="field-head">
+          <div class="field-label">NF de Saída</div>
+          <div class="field-hint">opcional</div>
+        </div>
+        <input type="text" id="i-nfs" placeholder="Número da NF de Saída" oninput="updatePreview()">
+      </div>
+
+      <!-- TRANSPORTADORA -->
+      <div class="field" id="f-transp">
+        <div class="field-head">
+          <div class="field-label">Transportadora</div>
+          <div class="field-hint">opcional</div>
+        </div>
+        <input type="text" id="i-transp" placeholder="Nome da transportadora" oninput="updatePreview()">
+      </div>
+
+      <!-- SITUAÇÃO -->
+      <div class="field" id="f-situacao">
+        <div class="field-head">
+          <div class="field-label">Situação <span class="req">*</span></div>
+          <div class="field-hint" id="et-hint">Selecione uma ou mais</div>
+        </div>
+        <div class="rca-display" onclick="openSituacaoModal()" id="sit-display">
+          <div id="sit-display-text" class="rca-placeholder">Selecionar situação...</div>
+          <div class="rca-display-arrow">▼</div>
+        </div>
+        <div id="et-wrap" style="display:none"></div>
+        <div class="field-err">Selecione pelo menos uma situação.</div>
+      </div>
+
+      <!-- DESCRIÇÃO DA SITUAÇÃO -->
+      <div class="field" id="f-desc">
+        <div class="field-head">
+          <div class="field-label">Descrição da Situação <span class="req">*</span></div>
+        </div>
+        <textarea id="i-desc" placeholder="Descreva a situação detalhadamente..." maxlength="600" oninput="updateCharCount(this);updatePreview()"></textarea>
+        <div class="char-wrap"><span class="char-c" id="char-c">0 / 600</span></div>
+        <div class="field-err">Campo obrigatório.</div>
+      </div>
+
+    </div><!-- /form-body -->
+
+    <!-- PRÉVIA -->
+    <div class="preview-wrap" id="preview">
+      <div class="preview-list">→ A FAZER</div>
+      <div id="preview-content"><div class="preview-empty">Preencha os campos para ver a prévia do card.</div></div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-area">
+      <button class="btn-submit" id="btn-sub" onclick="submitForm()">
+        <span id="btn-lbl">Criar card no Trello</span>
+      </button>
+      <button class="btn-reset" type="button" onclick="resetForm()">Limpar formulário</button>
+    </div>
+
+  </div><!-- /st-form -->
+
+  <!-- ════════════════════════════════
+       PÁGINA FRETE
+  ════════════════════════════════ -->
+  <div id="st-frete">
+
+    <button class="frete-back" onclick="hideFrete()">← Voltar ao forms</button>
+
+    <div class="frete-header">
+      <div class="frete-badge">🚚 Solicitação de Frete</div>
+      <h2>Cotar <em>Frete</em></h2>
+      <p>Preencha os dados abaixo para criar um card na lista <strong>SOLICITAÇÃO DE FRETE</strong> com todas as informações da cotação.</p>
+    </div>
+
+    <!-- SUCCESS FRETE -->
+    <div id="st-frete-success">
+      <div class="success-box" style="background:var(--yellow-bg);border-color:#e8c840">
+        <div style="font-size:3rem;margin-bottom:16px">🚚</div>
+        <h2 style="color:var(--yellow)">Frete solicitado!</h2>
+        <p>O card foi criado na lista <strong>SOLICITAÇÃO DE FRETE</strong> com sucesso.</p>
+        <a id="frete-success-link" href="#" target="_blank" class="success-link">Abrir no Trello →</a><br>
+        <button class="btn-novo" style="background:#c87800;box-shadow:3px 3px 0 #7a4800" onclick="resetFrete()">+ Nova solicitação de frete</button>
+        <br>
+        <button class="frete-back" style="margin-top:12px" onclick="hideFrete()">← Voltar ao forms principal</button>
+      </div>
+    </div>
+
+    <!-- FORM FRETE -->
+    <div id="frete-form-body">
+      <div class="form-body">
+
+        <!-- NOME / TÍTULO DO CARD -->
+        <div class="field" id="ff-nome">
+          <div class="field-head">
+            <div class="field-label">Nome e Título <span class="req">*</span></div>
+            <div class="field-hint">título do card no Trello</div>
+          </div>
+          <input type="text" id="fi-nome" placeholder="Ex: Cotação Frete – Cliente João Silva" oninput="updateFretePreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- EQUIPE -->
+        <div class="field" id="ff-equipe">
+          <div class="field-head">
+            <div class="field-label">Equipe <span class="req">*</span></div>
+          </div>
+          <div class="eq-row">
+            <div class="eq-box" id="feq-farol"    onclick="selectFreteEquipe('Farol',   '🗼')"><span class="eq-ico">🗼</span><span class="eq-name">Farol</span></div>
+            <div class="eq-box" id="feq-cactus"   onclick="selectFreteEquipe('Cactus',  '🌵')"><span class="eq-ico">🌵</span><span class="eq-name">Cactus</span></div>
+            <div class="eq-box" id="feq-girassol" onclick="selectFreteEquipe('Girassol','🌻')"><span class="eq-ico">🌻</span><span class="eq-name">Girassol</span></div>
+            <div class="eq-box" id="feq-raio"     onclick="selectFreteEquipe('Raio',    '⚡')"><span class="eq-ico">⚡</span><span class="eq-name">Raio</span></div>
+            <div class="eq-box" id="feq-clareou"  onclick="selectFreteEquipe('Clareou', '🌅')"><span class="eq-ico">🌅</span><span class="eq-name">Clareou</span></div>
+          </div>
+          <div class="field-err">Selecione a equipe.</div>
+        </div>
+
+        <!-- RCA -->
+        <div class="field" id="ff-rca">
+          <div class="field-head">
+            <div class="field-label">RCA <span class="req">*</span></div>
+            <div class="field-hint">consultor responsável</div>
+          </div>
+          <div class="rca-display" onclick="openFreteRCAModal()" id="frca-display">
+            <div>
+              <div id="frca-display-name" class="rca-placeholder">Selecionar consultor...</div>
+              <div id="frca-display-eq" class="rca-display-eq"></div>
+            </div>
+            <div class="rca-display-arrow">▼</div>
+          </div>
+          <div class="field-err">Selecione o RCA responsável.</div>
+        </div>
+
+        <!-- ID DO CLIENTE -->
+        <div class="field" id="ff-idcliente">
+          <div class="field-head">
+            <div class="field-label">ID do Cliente <span class="req">*</span></div>
+          </div>
+          <input type="text" id="fi-idcliente" placeholder="Ex: CLI-00123" oninput="updateFretePreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- FILIAL DE ORIGEM -->
+        <div class="field" id="ff-filial">
+          <div class="field-head">
+            <div class="field-label">Filial de Origem <span class="req">*</span></div>
+          </div>
+          <input type="text" id="fi-filial" placeholder="Ex: Filial São Paulo" oninput="updateFretePreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- CEP -->
+        <div class="field" id="ff-cep">
+          <div class="field-head">
+            <div class="field-label">CEP <span class="req">*</span></div>
+            <div class="field-hint">CEP de destino</div>
+          </div>
+          <input type="text" id="fi-cep" placeholder="Ex: 01310-100" maxlength="9"
+            oninput="mascaraCEP(this);updateFretePreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- LINK DO ORÇAMENTO -->
+        <div class="field" id="ff-link">
+          <div class="field-head">
+            <div class="field-label">Link do Orçamento</div>
+            <div class="field-hint">opcional</div>
+          </div>
+          <input type="text" id="fi-link" placeholder="https://..." oninput="updateFretePreview()">
+        </div>
+
+        <!-- DESCRIÇÃO -->
+        <div class="field" id="ff-desc">
+          <div class="field-head">
+            <div class="field-label">Observações</div>
+            <div class="field-hint">opcional</div>
+          </div>
+          <textarea id="fi-desc" placeholder="Informações adicionais sobre o frete..." maxlength="400" oninput="updateFretePreview()"></textarea>
+        </div>
+
+      </div><!-- /form-body frete -->
+
+      <!-- PRÉVIA FRETE -->
+      <div class="preview-wrap" style="margin-top:28px">
+        <div class="preview-wrap::before" style="display:none"></div>
+        <div style="position:absolute;top:12px;right:16px;font-family:'Archivo Mono',monospace;font-size:.55rem;letter-spacing:.14em;color:var(--ink3)">PRÉVIA DO CARD</div>
+        <div class="preview-list" style="background:var(--yellow-bg);color:var(--yellow);border-color:#e8c840">→ SOLICITAÇÃO DE FRETE</div>
+        <div id="frete-preview-content"><div class="preview-empty">Preencha os campos para ver a prévia.</div></div>
+      </div>
+
+      <!-- SUBMIT FRETE -->
+      <div class="submit-area">
+        <button class="btn-submit" id="btn-frete-sub" onclick="submitFrete()"
+          style="background:#c87800;border-color:#c87800;box-shadow:3px 3px 0 #7a4800">
+          <span id="btn-frete-lbl">🚚 Solicitar Frete</span>
+        </button>
+        <button class="btn-reset" type="button" onclick="resetFrete()">Limpar</button>
+      </div>
+    </div><!-- /frete-form-body -->
+
+  </div><!-- /st-frete -->
+
+  <!-- ════════════════════════════════
+       PÁGINA CADASTRO
+  ════════════════════════════════ -->
+  <div id="st-cadastro">
+
+    <button class="cadastro-back" onclick="hideCadastro()">← Voltar ao forms</button>
+
+    <div class="cadastro-header">
+      <div class="cadastro-badge">📋 Solicitação de Cadastro</div>
+      <h2>Novo <em>Cadastro</em></h2>
+      <p>Preencha os dados abaixo para criar um card na lista <strong>CADASTRO</strong> com todas as informações do cliente.</p>
+    </div>
+
+    <!-- SUCCESS CADASTRO -->
+    <div id="st-cadastro-success">
+      <div class="success-box" style="background:var(--blue-bg);border-color:#5a9fd4">
+        <div style="font-size:3rem;margin-bottom:16px">📋</div>
+        <h2 style="color:var(--blue)">Cadastro solicitado!</h2>
+        <p>O card foi criado na lista <strong>CADASTRO</strong> com sucesso.</p>
+        <a id="cadastro-success-link" href="#" target="_blank" class="success-link">Abrir no Trello →</a><br>
+        <button class="btn-novo" style="background:var(--blue);box-shadow:3px 3px 0 #0d2a4e" onclick="resetCadastro()">+ Novo cadastro</button>
+        <br>
+        <button class="cadastro-back" style="margin-top:12px" onclick="hideCadastro()">← Voltar ao forms principal</button>
+      </div>
+    </div>
+
+    <!-- FORM CADASTRO -->
+    <div id="cadastro-form-body">
+      <div class="form-body">
+
+        <!-- NOME E TÍTULO DO CARD -->
+        <div class="field" id="fc-titulo">
+          <div class="field-head">
+            <div class="field-label">Nome e Título <span class="req">*</span></div>
+            <div class="field-hint">título do card no Trello</div>
+          </div>
+          <input type="text" id="ci-titulo" placeholder="Ex: Cadastro – João Silva" oninput="updateCadastroPreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- EQUIPE -->
+        <div class="field" id="fc-equipe">
+          <div class="field-head">
+            <div class="field-label">Equipe <span class="req">*</span></div>
+          </div>
+          <div class="eq-row">
+            <div class="eq-box" id="ceq-farol"    onclick="selectCadastroEquipe('Farol',   '🗼')"><span class="eq-ico">🗼</span><span class="eq-name">Farol</span></div>
+            <div class="eq-box" id="ceq-cactus"   onclick="selectCadastroEquipe('Cactus',  '🌵')"><span class="eq-ico">🌵</span><span class="eq-name">Cactus</span></div>
+            <div class="eq-box" id="ceq-girassol" onclick="selectCadastroEquipe('Girassol','🌻')"><span class="eq-ico">🌻</span><span class="eq-name">Girassol</span></div>
+            <div class="eq-box" id="ceq-raio"     onclick="selectCadastroEquipe('Raio',    '⚡')"><span class="eq-ico">⚡</span><span class="eq-name">Raio</span></div>
+            <div class="eq-box" id="ceq-clareou"  onclick="selectCadastroEquipe('Clareou', '🌅')"><span class="eq-ico">🌅</span><span class="eq-name">Clareou</span></div>
+          </div>
+          <div class="field-err">Selecione a equipe.</div>
+        </div>
+
+        <!-- RCA -->
+        <div class="field" id="fc-rca">
+          <div class="field-head">
+            <div class="field-label">RCA <span class="req">*</span></div>
+            <div class="field-hint">consultor responsável</div>
+          </div>
+          <div class="rca-display" onclick="openCadastroRCAModal()" id="crca-display">
+            <div>
+              <div id="crca-display-name" class="rca-placeholder">Selecionar consultor...</div>
+              <div id="crca-display-eq" class="rca-display-eq"></div>
+            </div>
+            <div class="rca-display-arrow">▼</div>
+          </div>
+          <div class="field-err">Selecione o RCA responsável.</div>
+        </div>
+
+        <!-- NOME DO CLIENTE -->
+        <div class="field" id="fc-nomecliente">
+          <div class="field-head">
+            <div class="field-label">Nome do Cliente <span class="req">*</span></div>
+          </div>
+          <input type="text" id="ci-nomecliente" placeholder="Ex: João Silva" oninput="updateCadastroPreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- CPF / CNPJ -->
+        <div class="field" id="fc-cpfcnpj">
+          <div class="field-head">
+            <div class="field-label">CPF / CNPJ <span class="req">*</span></div>
+            <div class="field-hint" id="cpfcnpj-hint">digita para detectar automaticamente</div>
+          </div>
+          <input type="text" id="ci-cpfcnpj" placeholder="000.000.000-00 ou 00.000.000/0000-00"
+            maxlength="18" oninput="mascaraCPFCNPJ(this);updateCadastroPreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- ID INTEGRADOR -->
+        <div class="field" id="fc-idint">
+          <div class="field-head">
+            <div class="field-label">ID (Integrador) <span class="req">*</span></div>
+            <div class="field-hint">código do integrador</div>
+          </div>
+          <input type="text" id="ci-idint" placeholder="Ex: INT-00123" oninput="updateCadastroPreview()">
+          <div class="field-err">Campo obrigatório.</div>
+        </div>
+
+        <!-- OBSERVAÇÕES -->
+        <div class="field" id="fc-obs">
+          <div class="field-head">
+            <div class="field-label">Observações</div>
+            <div class="field-hint">opcional</div>
+          </div>
+          <textarea id="ci-obs" placeholder="Informações adicionais sobre o cadastro..." maxlength="400" oninput="updateCadastroPreview()"></textarea>
+        </div>
+
+      </div><!-- /form-body cadastro -->
+
+      <!-- PRÉVIA CADASTRO -->
+      <div class="preview-wrap" style="margin-top:28px;position:relative">
+        <div style="position:absolute;top:12px;right:16px;font-family:'Archivo Mono',monospace;font-size:.55rem;letter-spacing:.14em;color:var(--ink3)">PRÉVIA DO CARD</div>
+        <div class="preview-list" style="background:var(--blue-bg);color:var(--blue);border-color:#5a9fd4">→ CADASTRO</div>
+        <div id="cadastro-preview-content"><div class="preview-empty">Preencha os campos para ver a prévia.</div></div>
+      </div>
+
+      <!-- SUBMIT CADASTRO -->
+      <div class="submit-area">
+        <button class="btn-submit" id="btn-cadastro-sub" onclick="submitCadastro()"
+          style="background:var(--blue);border-color:var(--blue);box-shadow:3px 3px 0 #0d2a4e">
+          <span id="btn-cadastro-lbl">📋 Solicitar Cadastro</span>
+        </button>
+        <button class="btn-reset" type="button" onclick="resetCadastro()">Limpar</button>
+      </div>
+
+    </div><!-- /cadastro-form-body -->
+
+  </div><!-- /st-cadastro -->
+</div>
+
+<!-- MODAL SITUAÇÃO -->
+<div id="sit-modal-bg" onclick="if(event.target===this)closeSituacaoModal()">
+  <div id="rca-modal" style="max-width:520px">
+    <div class="rca-modal-head">
+      <h3>Selecionar Situação</h3>
+      <input class="rca-search" type="text" id="sit-search" placeholder="Buscar situação..." oninput="filterSituacaoModal(this.value)">
+    </div>
+    <div class="rca-modal-body" id="sit-modal-body"></div>
+    <div class="rca-modal-foot">
+      <div class="rca-selected-label"><strong id="sit-sel-count">0</strong> selecionada(s)</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn-cancel-rca" onclick="closeSituacaoModal()">Cancelar</button>
+        <button class="btn-confirm-rca" onclick="confirmSituacao()">Confirmar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RCA -->
+<div id="rca-modal-bg" onclick="if(event.target===this)closeRCAModal()">
+  <div id="rca-modal">
+    <div class="rca-modal-head">
+      <h3>Selecionar RCA</h3>
+      <input class="rca-search" type="text" id="rca-search" placeholder="Buscar consultor..." oninput="filterRCAModal(this.value)">
+    </div>
+    <div class="rca-modal-body" id="rca-modal-body"></div>
+    <div class="rca-modal-foot">
+      <div class="rca-selected-label">Selecionado: <strong id="rca-sel-label">—</strong></div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn-cancel-rca" onclick="closeRCAModal()">Cancelar</button>
+        <button class="btn-confirm-rca" onclick="confirmRCA()">Confirmar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RCA FRETE -->
+<div id="frca-modal-bg" onclick="if(event.target===this)closeFreteRCAModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px">
+  <div id="frca-modal" style="background:var(--surface);border:2px solid var(--ink);border-radius:10px;width:100%;max-width:580px;max-height:80vh;display:flex;flex-direction:column;box-shadow:6px 6px 0 var(--ink);animation:popIn .2s cubic-bezier(.34,1.56,.64,1)">
+    <div class="rca-modal-head">
+      <h3>Selecionar RCA — Frete</h3>
+      <input class="rca-search" type="text" id="frca-search" placeholder="Buscar consultor..." oninput="filterFreteRCAModal(this.value)">
+    </div>
+    <div class="rca-modal-body" id="frca-modal-body"></div>
+    <div class="rca-modal-foot">
+      <div class="rca-selected-label">Selecionado: <strong id="frca-sel-label">—</strong></div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn-cancel-rca" onclick="closeFreteRCAModal()">Cancelar</button>
+        <button class="btn-confirm-rca" onclick="confirmFreteRCA()">Confirmar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── JS já existente ──
+// ═══════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════
+const KEY   = 'c9c79cf6c41d3521bd7a8d79f2dec202';
+const TOKEN = 'ATTA631fc95a87a351811e61eac1864c866dc5dfc5c8b8af5deb3c90848cc7ee9b0727C80483';
+const BOARD = '1ongu3oT';
+const API   = 'https://api.trello.com/1';
+
+// ═══════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════
+let LISTA_ID   = null;
+let LABELS_ALL = [];
+let ET_SEL     = new Set();
+let ORIGEM_SEL = null;
+let CF         = {};
+let EQUIPE_SEL = null;
+let RCA_SEL    = null;
+let RCA_TEMP   = null; // seleção temporária dentro do modal
+let USER_EMAIL = null;
+
+const RCAS_POR_EQUIPE = {
+  'Farol':   ['ALANA SOUSA','ANDERSON ARAUJO','ARTUR FILHO','BRENA INGRED','DEBORA AQUINO',
+              'DIEGO SOUSA','FERNANDA MONTENEGRO','GUILHERME RODRIGUES','HIDYONARA SOUSA',
+              'ITALO HENRIQUE','JAMILE SOUZA','MARCELINO MONTEIRO','MARCO VANBASTEN',
+              'MARIA MOURA','PROZZYNESK LIBERATO','SIDNEI SANTANA','LUCAS MAIA'],
+  'Cactus':  ['ADEMAR LUCIO','ANDRE LUIZ','BRENNA BARBOSA','CASSIUS LEITE',
+              'CHRISTIANO ARAUJO','CLAUDETH SANTOS','CLEITON OLIVEIRA','GILLIARD BARBOSA',
+              'ISMAEL HEBSTER','JAMES FERREIRA','MARCIO WENDELL','PATRICIA SANTOS',
+              'RAMON BATISTA','RAPHAELA OLIVEIRA','ROSALY RIBEIRO','VICTOR TORRES'],
+  'Raio':    ['ANCELMO RODRIGUES','BRUNO SOUZA','DANILO DIAS','HARD TRAJANO',
+              'IVAN FERNANDES','KARLANY PAIVA','LUCAS ARCANJO','LUCAS TADEU',
+              'MARCELO MOREIRA','MARIANA COSTA','MILENA BRITO','RAFAEL FAUSTINO',
+              'ERIK PINHHEIRO','OLIVER ORHAND'],
+  'Girassol':['ALEXANDRE XAVIER','ANDRE FELIPE','ANTONIO VINICIO','CAROLINA COSTA',
+              'DAYANA OLIVEIRA','DIANA PARENTE','DIEGO NEGREIROS','GABRIEL SOUSA',
+              'ISIS CRISTINE','LEVI DA SILVA','TALLYS LEAL','VITOR FAÇANHA',
+              'WALESKA ALMEIDA','ERICK RAFAEL'],
+  'Clareou': ['ALEXANDRE BENJAMIN','AUGUSTO FILHO','DIEGO CRUZ','EDUARDA SAMPAIO',
+              'FERNANDO MACENA','FLAVIA SOUTO','JEFFERSON SILVA','LUANDERSON LOURENÇO',
+              'LWENDRYL VIDAL','MARIANA LIMA','MATEUS MENESES','PATRICIA BODEN',
+              'REGINALDO LIMA','ROSANGELA MARTIS','SIMARA NUNES'],
+};
+
+const EQ_EMOJI = {Farol:'🗼',Cactus:'🌵',Girassol:'🌻',Raio:'⚡',Clareou:'🌅'};
+
+// ═══════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════
+const trello = async (path, opts={}) => {
+  const sep = path.includes('?')?'&':'?';
+  const r = await fetch(`${API}${path}${sep}key=${KEY}&token=${TOKEN}`, opts);
+  if (!r.ok) throw new Error(`Trello API ${r.status}: ${await r.text()}`);
+  return r.json();
+};
+
+function showSt(s){
+  ['loading','error','success','login'].forEach(id=>{
+    document.getElementById('st-'+id).className = (id===s)?'on':'';
+  });
+  document.getElementById('st-form').className = s==='form'?'':'off';
+  // mostra badge só quando formulário ativo
+  const wrap = document.getElementById('user-badge-wrap');
+  if(wrap) wrap.style.display = (s==='form'&&USER_EMAIL) ? 'block' : 'none';
+}
+
+function trelloColor(c){
+  const m={green:'#1a8a3c',yellow:'#c9821b',orange:'#d35400',red:'#c0392b',
+    purple:'#7b2fa0',blue:'#0079bf',sky:'#00aecc',lime:'#4bbf6b',
+    pink:'#e91e8c',black:'#333'};
+  return m[c]||'#666';
+}
+
+function val(id){ return (document.getElementById(id)||{}).value?.trim()||''; }
+
+// ═══════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════
+function entrar(){
+  const input = document.getElementById('login-email');
+  const errEl = document.getElementById('login-err');
+  const email = input.value.trim();
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  input.classList.toggle('err', !valid);
+  errEl.classList.toggle('on', !valid);
+  if(!valid) return;
+  USER_EMAIL = email;
+  localStorage.setItem('cx_user_email', email);
+  document.getElementById('user-badge-email').textContent = email;
+  init();
+}
+
+function sair(){
+  if(!confirm('Deseja sair? Seu e-mail salvo será removido.')) return;
+  USER_EMAIL = null;
+  localStorage.removeItem('cx_user_email');
+  showSt('login');
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+async function init(){
+  // Verifica login salvo
+  USER_EMAIL = localStorage.getItem('cx_user_email') || null;
+  if(!USER_EMAIL){ showSt('login'); return; }
+  showSt('loading');
+  try {
+    // 1. Buscar lista "A FAZER"
+    const listas = await trello(`/boards/${BOARD}/lists?filter=open&fields=id,name`);
+    const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+    const af = listas.find(l=>norm(l.name).includes('FAZER'));
+    if(!af) throw new Error('Lista "A FAZER" não encontrada. Verifique o nome da lista no board.');
+    LISTA_ID = af.id;
+
+    // 2. Buscar etiquetas
+    const labels = await trello(`/boards/${BOARD}/labels?fields=id,name,color&limit=100`);
+    LABELS_ALL = labels.filter(l=>l.name);
+    renderLabels();
+
+    // 3. Buscar custom fields
+    const cfs = await trello(`/boards/${BOARD}/customFields`);
+    cfs.forEach(cf => { CF[cf.name.toUpperCase()] = cf.id; });
+
+    document.getElementById('user-badge-email').textContent = USER_EMAIL;
+    showSt('form');
+  } catch(e){
+    document.getElementById('err-msg').textContent = e.message;
+    showSt('error');
+  }
+}
+
+// ═══════════════════════════════════
+// ETIQUETAS / SITUAÇÃO
+// ═══════════════════════════════════
+const EQ_NOMES = ['farol','cactus','girassol','raio','clareou'];
+
+function isEtiquetaEquipe(nome){
+  const n = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return EQ_NOMES.some(eq => n.includes(eq));
+}
+
+function renderLabels(){
+  // Filtra etiquetas de equipe — elas ficam disponíveis apenas internamente
+  LABELS_SITUACAO = LABELS_ALL.filter(l => !isEtiquetaEquipe(l.name));
+}
+
+let LABELS_SITUACAO = [];
+let ET_TEMP = new Set();
+
+function openSituacaoModal(){
+  ET_TEMP = new Set([...ET_SEL]);
+  renderSituacaoModal('');
+  document.getElementById('sit-modal-bg').classList.add('open');
+  setTimeout(()=>document.getElementById('sit-search').focus(),100);
+}
+
+function closeSituacaoModal(){
+  document.getElementById('sit-modal-bg').classList.remove('open');
+  document.getElementById('sit-search').value='';
+  ET_TEMP = new Set();
+}
+
+function confirmSituacao(){
+  ET_SEL = new Set([...ET_TEMP]);
+  atualizarDisplaySituacao();
+  clearInv('f-situacao');
+  updatePreview();
+  closeSituacaoModal();
+}
+
+function atualizarDisplaySituacao(){
+  const n = ET_SEL.size;
+  const hint = document.getElementById('et-hint');
+  const display = document.getElementById('sit-display-text');
+  if(n === 0){
+    display.textContent = 'Selecionar situação...';
+    display.className = 'rca-placeholder';
+    hint.textContent = 'Selecione uma ou mais';
+  } else {
+    const nomes = [...ET_SEL].map(id=>LABELS_ALL.find(e=>e.id===id)?.name).filter(Boolean);
+    display.textContent = nomes.join(' · ');
+    display.className = 'rca-display-name';
+    hint.textContent = `${n} selecionada${n>1?'s':''}`;
+  }
+}
+
+function renderSituacaoModal(filtro){
+  const q = filtro.toUpperCase().trim();
+  const lista = q
+    ? LABELS_SITUACAO.filter(et=>et.name.toUpperCase().includes(q))
+    : LABELS_SITUACAO;
+
+  const body = document.getElementById('sit-modal-body');
+  body.innerHTML = `<div class="et-grid" style="padding:4px 0">${
+    lista.map(et=>{
+      const cor = trelloColor(et.color);
+      const sel = ET_TEMP.has(et.id);
+      return `<div class="et-btn${sel?' sel':''}" id="sit-et-${et.id}"
+        onclick="toggleETTemp('${et.id}')">
+        <div class="et-dot" style="background:${cor}"></div>
+        ${et.name}
+      </div>`;
+    }).join('')
+  }</div>` || '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:.82rem">Nenhuma situação encontrada.</div>';
+
+  document.getElementById('sit-sel-count').textContent = ET_TEMP.size;
+}
+
+function toggleETTemp(id){
+  ET_TEMP.has(id) ? ET_TEMP.delete(id) : ET_TEMP.add(id);
+  const btn = document.getElementById('sit-et-'+id);
+  if(btn) btn.classList.toggle('sel', ET_TEMP.has(id));
+  document.getElementById('sit-sel-count').textContent = ET_TEMP.size;
+}
+
+function filterSituacaoModal(q){
+  renderSituacaoModal(q);
+}
+
+function toggleET(id){
+  ET_SEL.has(id)?ET_SEL.delete(id):ET_SEL.add(id);
+  document.getElementById('et-'+id)?.classList.toggle('sel',ET_SEL.has(id));
+  atualizarDisplaySituacao();
+  clearInv('f-situacao'); updatePreview();
+}
+
+// ═══════════════════════════════════
+// ORIGEM
+// ═══════════════════════════════════
+function selectOrigem(v){
+  ORIGEM_SEL = v;
+  document.getElementById('tog-matriz').classList.toggle('sel', v==='MATRIZ');
+  document.getElementById('tog-filial').classList.toggle('sel', v==='FILIAL');
+  clearInv('f-orig'); updatePreview();
+}
+
+// ═══════════════════════════════════
+// EQUIPE
+// ═══════════════════════════════════
+function selectEquipe(nome, emoji){
+  // Remove etiqueta da equipe anterior (se havia)
+  if(EQUIPE_SEL){
+    const anterior = LABELS_ALL.find(l => isEtiquetaEquipe(l.name) &&
+      l.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .includes(EQUIPE_SEL.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+    if(anterior) ET_SEL.delete(anterior.id);
+  }
+
+  EQUIPE_SEL = {nome, emoji};
+  document.querySelectorAll('.eq-box').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('eq-'+nome.toLowerCase())?.classList.add('sel');
+
+  // Adiciona etiqueta da nova equipe ao ET_SEL
+  const labelEq = LABELS_ALL.find(l => isEtiquetaEquipe(l.name) &&
+    l.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .includes(nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+  if(labelEq) ET_SEL.add(labelEq.id);
+
+  atualizarDisplaySituacao();
+  // Filtra RCAs do modal para a equipe selecionada
+  filterRCAModal(document.getElementById('rca-search')?.value||'');
+  clearInv('f-equipe'); updatePreview();
+}
+
+// ═══════════════════════════════════
+// RCA MODAL
+// ═══════════════════════════════════
+function openRCAModal(){
+  RCA_TEMP = RCA_SEL ? {...RCA_SEL} : null;
+  renderRCAModal('');
+  document.getElementById('rca-modal-bg').classList.add('open');
+  setTimeout(()=>document.getElementById('rca-search').focus(), 100);
+}
+
+function closeRCAModal(){
+  document.getElementById('rca-modal-bg').classList.remove('open');
+  document.getElementById('rca-search').value='';
+  RCA_TEMP = null;
+}
+
+function confirmRCA(){
+  if(!RCA_TEMP){ alert('Selecione um consultor.'); return; }
+  RCA_SEL = {...RCA_TEMP};
+  document.getElementById('rca-display-name').textContent = RCA_SEL.nome;
+  document.getElementById('rca-display-name').classList.remove('rca-placeholder');
+  document.getElementById('rca-display-eq').textContent = `${EQ_EMOJI[RCA_SEL.eq]||''} ${RCA_SEL.eq}`;
+  clearInv('f-rca'); updatePreview();
+  closeRCAModal();
+}
+
+function selectRCATemp(nome, eq){
+  RCA_TEMP = {nome, eq};
+  document.querySelectorAll('.rca-name-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('rca-btn-'+nome.replace(/\s/g,'_'))?.classList.add('active');
+  document.getElementById('rca-sel-label').textContent = nome;
+}
+
+function renderRCAModal(filtro){
+  const q = filtro.toUpperCase().trim();
+  const body = document.getElementById('rca-modal-body');
+  const equipes = EQUIPE_SEL ? [EQUIPE_SEL.nome] : Object.keys(RCAS_POR_EQUIPE);
+  let html = '';
+  let total = 0;
+
+  equipes.forEach(eq=>{
+    const lista = RCAS_POR_EQUIPE[eq] || [];
+    const filtrado = q ? lista.filter(n=>n.toUpperCase().includes(q)) : lista;
+    if(!filtrado.length) return;
+    total += filtrado.length;
+    html += `<div class="rca-eq-group">
+      <div class="rca-eq-title">${EQ_EMOJI[eq]||''} ${eq}</div>
+      <div class="rca-names-grid">
+        ${filtrado.map(n=>{
+          const id = 'rca-btn-'+n.replace(/\s/g,'_');
+          const active = RCA_TEMP?.nome===n ? 'active' : '';
+          return `<button class="rca-name-btn ${active}" id="${id}"
+            onclick="selectRCATemp('${n}','${eq}')">${n}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  body.innerHTML = html || `<div style="text-align:center;padding:24px;color:var(--ink3);font-size:.82rem">Nenhum consultor encontrado.</div>`;
+  document.getElementById('rca-sel-label').textContent = RCA_TEMP?.nome || '—';
+}
+
+function filterRCAModal(q){
+  renderRCAModal(q);
+}
+
+// ═══════════════════════════════════
+// CHAR COUNT
+// ═══════════════════════════════════
+function updateCharCount(el){
+  const n=el.value.length;
+  const cc=document.getElementById('char-c');
+  cc.textContent=`${n} / 600`;
+  cc.className='char-c'+(n>500?' warn':'')+(n>=600?' over':'');
+}
+
+// ═══════════════════════════════════
+// PRÉVIA
+// ═══════════════════════════════════
+function updatePreview(){
+  const nome   = val('i-nome');
+  const rca    = RCA_SEL?.nome || '';
+  const idint  = val('i-idint');
+  const pedido = val('i-pedido');
+  const desc   = val('i-desc');
+  const nff    = val('i-nff');
+  const nfs    = val('i-nfs');
+  const transp = val('i-transp');
+  const prot   = val('i-prot');
+  const eq     = EQUIPE_SEL?.nome || '';
+
+  const etSel = [...ET_SEL].map(id=>LABELS_ALL.find(e=>e.id===id)).filter(Boolean);
+  const empty = !nome && !rca && !idint && etSel.length===0;
+
+  const el = document.getElementById('preview-content');
+  if(empty){ el.innerHTML='<div class="preview-empty">Preencha os campos para ver a prévia do card.</div>'; return; }
+
+  const tags = etSel.map(et=>{
+    const cor=trelloColor(et.color);
+    return `<span class="preview-tag" style="background:${cor}22;color:${cor};border:1px solid ${cor}44">${et.name}</span>`;
+  }).join('');
+
+  const meta = [
+    rca    && `<div class="preview-meta-item">RCA: <strong>${rca}</strong></div>`,
+    eq     && `<div class="preview-meta-item">Equipe: <strong>${EQUIPE_SEL.emoji} ${eq}</strong></div>`,
+    idint  && `<div class="preview-meta-item">ID Integrador: <strong>${idint}</strong></div>`,
+    ORIGEM_SEL && `<div class="preview-meta-item">Origem: <strong>${ORIGEM_SEL}</strong></div>`,
+    pedido && `<div class="preview-meta-item">Pedido: <strong>${pedido}</strong></div>`,
+    prot   && `<div class="preview-meta-item">Protocolo: <strong>${prot}</strong></div>`,
+    nff    && `<div class="preview-meta-item">NF Futura: <strong>${nff}</strong></div>`,
+    nfs    && `<div class="preview-meta-item">NF Saída: <strong>${nfs}</strong></div>`,
+    transp && `<div class="preview-meta-item">Transportadora: <strong>${transp}</strong></div>`,
+  ].filter(Boolean).join('');
+
+  el.innerHTML = `
+    ${nome?`<div class="preview-title">${nome}</div>`:''}
+    ${tags?`<div class="preview-tags">${tags}</div>`:''}
+    ${desc?`<div style="font-size:.78rem;color:var(--ink2);line-height:1.6;margin-bottom:10px">${desc}</div>`:''}
+    ${meta?`<div class="preview-meta">${meta}</div>`:''}
+  `;
+}
+
+// ═══════════════════════════════════
+// VALIDAÇÃO
+// ═══════════════════════════════════
+function clearInv(id){ document.getElementById(id)?.classList.remove('invalid'); }
+
+function validate(){
+  let ok=true;
+  const required=[
+    {id:'f-nome',    val:()=>val('i-nome')},
+    {id:'f-equipe',  val:()=>EQUIPE_SEL?.nome||''},
+    {id:'f-rca',     val:()=>RCA_SEL?.nome||''},
+    {id:'f-idint',   val:()=>val('i-idint')},
+    {id:'f-orig',    val:()=>ORIGEM_SEL},
+    {id:'f-pedido',  val:()=>val('i-pedido')},
+    {id:'f-situacao',val:()=>ET_SEL.size>0?'ok':''},
+    {id:'f-desc',    val:()=>val('i-desc')},
+  ];
+  required.forEach(r=>{
+    if(!r.val()){ document.getElementById(r.id).classList.add('invalid'); ok=false; }
+  });
+  if(!ok) document.querySelector('.field.invalid')?.scrollIntoView({behavior:'smooth',block:'center'});
+  return ok;
+}
+
+// ═══════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════
+async function submitForm(){
+  if(!validate()) return;
+
+  const btn=document.getElementById('btn-sub');
+  const lbl=document.getElementById('btn-lbl');
+  btn.disabled=true; lbl.textContent='Criando card...';
+
+  const nome   = val('i-nome');
+  const rca    = RCA_SEL.nome;
+  const eq     = EQUIPE_SEL.nome;
+  const idint  = val('i-idint');
+  const prot   = val('i-prot');
+  const pedido = val('i-pedido');
+  const nff    = val('i-nff');
+  const nfs    = val('i-nfs');
+  const transp = val('i-transp');
+  const desc   = val('i-desc');
+
+  const descCard = [
+    `👤 RCA: ${rca}`,
+    `🔗 ID Integrador: ${idint}`,
+    ORIGEM_SEL && `📍 Origem: ${ORIGEM_SEL}`,
+    `📦 Nº Pedido: ${pedido}`,
+    prot   && `🎫 Protocolo: ${prot}`,
+    nff    && `🧾 NF Futura: ${nff}`,
+    nfs    && `🧾 NF Saída: ${nfs}`,
+    transp && `🚚 Transportadora: ${transp}`,
+    `---`,
+    `📋 *Descrição da Situação:*\n${desc}`,
+  ].filter(Boolean).join('\n');
+
+  try {
+    const body = new URLSearchParams({
+      idList:   LISTA_ID,
+      name:     nome,
+      desc:     descCard,
+      idLabels: [...ET_SEL].join(','),
+      pos:      'bottom',
+    });
+    const card = await trello('/cards',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: body.toString(),
+    });
+
+    const cfMap = {
+      'CRIADO POR':       USER_EMAIL,
+      'RCA':              rca,
+      'ID(INTEGRADOR)':   idint,
+      'PROTOCOLO':        prot,
+      'ORIGEM':           ORIGEM_SEL,
+      'NUMERO DO PEDIDO': pedido,
+      'NF FUTURA':        nff,
+      'NF DE SAÍDA':      nfs,
+      'TRANSPORTADORA':   transp,
+      'DESCRIÇÃO DA SITUAÇÃO': desc,
+    };
+
+    await Promise.allSettled(
+      Object.entries(cfMap).map(([cfName, cfVal]) => {
+        if(!cfVal) return Promise.resolve();
+        const cfId = CF[cfName]
+          || CF[cfName.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()]
+          || Object.entries(CF).find(([k])=>k.includes(cfName.split(' ')[0]))?.[1];
+        if(!cfId) return Promise.resolve();
+        return trello(`/card/${card.id}/customField/${cfId}/item`,{
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({value:{text: String(cfVal)}}),
+        });
+      })
+    );
+
+    // Adiciona comentário identificando quem criou o card
+    await trello(`/cards/${card.id}/actions/comments`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        text: `📝 *Card criado por:* ${USER_EMAIL}`
+      }).toString(),
+    });
+
+    document.getElementById('success-link').href = card.url;
+    document.getElementById('success-link').textContent = card.shortUrl||card.url;
+    showSt('success');
+
+  } catch(e){
+    alert(`Erro ao criar card:\n${e.message}`);
+    btn.disabled=false; lbl.textContent='Criar card no Trello';
+  }
+}
+
+// ═══════════════════════════════════
+// RESET
+// ═══════════════════════════════════
+function resetForm(){
+  ET_SEL=new Set(); ORIGEM_SEL=null; EQUIPE_SEL=null; RCA_SEL=null; RCA_TEMP=null; ET_TEMP=new Set();
+  ['i-nome','i-idint','i-prot','i-pedido','i-nff','i-nfs','i-transp','i-desc']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('char-c').textContent='0 / 600';
+  document.getElementById('et-hint').textContent='Selecione uma ou mais';
+  document.getElementById('rca-display-name').textContent='Selecionar consultor...';
+  document.getElementById('rca-display-name').className='rca-placeholder';
+  document.getElementById('rca-display-eq').textContent='';
+  document.getElementById('sit-display-text').textContent='Selecionar situação...';
+  document.getElementById('sit-display-text').className='rca-placeholder';
+  document.querySelectorAll('.et-btn,.eq-box,.toggle-opt').forEach(b=>b.classList.remove('sel','selected'));
+  document.querySelectorAll('.field').forEach(f=>f.classList.remove('invalid'));
+  document.getElementById('btn-sub').disabled=false;
+  document.getElementById('btn-lbl').textContent='Criar card no Trello';
+  document.getElementById('preview-content').innerHTML='<div class="preview-empty">Preencha os campos para ver a prévia do card.</div>';
+  showSt('form');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════
+// FRETE — estado
+// ═══════════════════════════════════
+let FRETE_LISTA_ID = null;
+let FRETE_EQUIPE   = null;
+let FRETE_RCA      = null;
+let FRETE_RCA_TEMP = null;
+
+function showFrete(){
+  document.getElementById('st-form').classList.add('off');
+  document.getElementById('st-frete').classList.add('on');
+  document.getElementById('st-frete-success').classList.remove('on');
+  document.getElementById('frete-form-body').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function hideFrete(){
+  document.getElementById('st-frete').classList.remove('on');
+  document.getElementById('st-form').classList.remove('off');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function initFretelista(){
+  if(FRETE_LISTA_ID) return;
+  try{
+    const listas=await trello(`/boards/${BOARD}/lists?filter=open&fields=id,name`);
+    const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+    const lst=listas.find(l=>norm(l.name).includes('FRETE'));
+    FRETE_LISTA_ID=lst?lst.id:LISTA_ID;
+  }catch(_){ FRETE_LISTA_ID=LISTA_ID; }
+}
+
+function selectFreteEquipe(nome,emoji){
+  FRETE_EQUIPE={nome,emoji};
+  document.querySelectorAll('[id^="feq-"]').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('feq-'+nome.toLowerCase())?.classList.add('sel');
+  filterFreteRCAModal(document.getElementById('frca-search')?.value||'');
+  document.getElementById('ff-equipe').classList.remove('invalid');
+  updateFretePreview();
+}
+
+function openFreteRCAModal(){
+  FRETE_RCA_TEMP=FRETE_RCA?{...FRETE_RCA}:null;
+  renderFreteRCAModal('');
+  document.getElementById('frca-modal-bg').style.display='flex';
+  setTimeout(()=>document.getElementById('frca-search').focus(),100);
+}
+function closeFreteRCAModal(){
+  document.getElementById('frca-modal-bg').style.display='none';
+  document.getElementById('frca-search').value='';
+  FRETE_RCA_TEMP=null;
+}
+function confirmFreteRCA(){
+  if(!FRETE_RCA_TEMP){alert('Selecione um consultor.');return;}
+  FRETE_RCA={...FRETE_RCA_TEMP};
+  document.getElementById('frca-display-name').textContent=FRETE_RCA.nome;
+  document.getElementById('frca-display-name').classList.remove('rca-placeholder');
+  document.getElementById('frca-display-eq').textContent=`${EQ_EMOJI[FRETE_RCA.eq]||''} ${FRETE_RCA.eq}`;
+  document.getElementById('ff-rca').classList.remove('invalid');
+  closeFreteRCAModal(); updateFretePreview();
+}
+function selectFreteRCATemp(nome,eq){
+  FRETE_RCA_TEMP={nome,eq};
+  document.querySelectorAll('#frca-modal .rca-name-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('frcab-'+nome.replace(/\s/g,'_'))?.classList.add('active');
+  document.getElementById('frca-sel-label').textContent=nome;
+}
+function renderFreteRCAModal(filtro){
+  const q=filtro.toUpperCase().trim();
+  const equipes=FRETE_EQUIPE?[FRETE_EQUIPE.nome]:Object.keys(RCAS_POR_EQUIPE);
+  let html='';
+  equipes.forEach(eq=>{
+    const lista=RCAS_POR_EQUIPE[eq]||[];
+    const filtrado=q?lista.filter(n=>n.toUpperCase().includes(q)):lista;
+    if(!filtrado.length) return;
+    html+=`<div class="rca-eq-group"><div class="rca-eq-title">${EQ_EMOJI[eq]||''} ${eq}</div><div class="rca-names-grid">${
+      filtrado.map(n=>{
+        const id='frcab-'+n.replace(/\s/g,'_');
+        const active=FRETE_RCA_TEMP?.nome===n?'active':'';
+        return `<button class="rca-name-btn ${active}" id="${id}" onclick="selectFreteRCATemp('${n}','${eq}')">${n}</button>`;
+      }).join('')
+    }</div></div>`;
+  });
+  document.getElementById('frca-modal-body').innerHTML=html||'<div style="text-align:center;padding:24px;color:var(--ink3)">Nenhum consultor encontrado.</div>';
+  document.getElementById('frca-sel-label').textContent=FRETE_RCA_TEMP?.nome||'—';
+}
+function filterFreteRCAModal(q){ renderFreteRCAModal(q); }
+
+function mascaraCEP(el){
+  let v=el.value.replace(/\D/g,'').slice(0,8);
+  if(v.length>5) v=v.slice(0,5)+'-'+v.slice(5);
+  el.value=v;
+}
+
+function updateFretePreview(){
+  const nome   =(document.getElementById('fi-nome')?.value||'').trim();
+  const idcli  =(document.getElementById('fi-idcliente')?.value||'').trim();
+  const filial =(document.getElementById('fi-filial')?.value||'').trim();
+  const cep    =(document.getElementById('fi-cep')?.value||'').trim();
+  const link   =(document.getElementById('fi-link')?.value||'').trim();
+  const desc   =(document.getElementById('fi-desc')?.value||'').trim();
+  const eq     =FRETE_EQUIPE?.nome||'';
+  const rca    =FRETE_RCA?.nome||'';
+  const el=document.getElementById('frete-preview-content');
+  if(!nome&&!idcli&&!cep){el.innerHTML='<div class="preview-empty">Preencha os campos para ver a prévia.</div>';return;}
+  const meta=[
+    rca    &&`<div class="preview-meta-item">RCA: <strong>${rca}</strong></div>`,
+    eq     &&`<div class="preview-meta-item">Equipe: <strong>${FRETE_EQUIPE.emoji} ${eq}</strong></div>`,
+    idcli  &&`<div class="preview-meta-item">ID Cliente: <strong>${idcli}</strong></div>`,
+    filial &&`<div class="preview-meta-item">Filial: <strong>${filial}</strong></div>`,
+    cep    &&`<div class="preview-meta-item">CEP: <strong>${cep}</strong></div>`,
+    link   &&`<div class="preview-meta-item">Link: <strong style="color:var(--blue)">✓ preenchido</strong></div>`,
+  ].filter(Boolean).join('');
+  el.innerHTML=`
+    ${nome?`<div class="preview-title">${nome}</div>`:''}
+    <div class="preview-tags"><span class="preview-tag" style="background:#fef8e822;color:var(--yellow);border:1px solid #e8c84044">🚚 FRETE</span></div>
+    ${desc?`<div style="font-size:.78rem;color:var(--ink2);line-height:1.6;margin-bottom:10px">${desc}</div>`:''}
+    ${meta?`<div class="preview-meta">${meta}</div>`:''}
+  `;
+}
+
+function validateFrete(){
+  let ok=true;
+  [{id:'ff-nome',v:()=>(document.getElementById('fi-nome')?.value||'').trim()},
+   {id:'ff-equipe',v:()=>FRETE_EQUIPE?.nome||''},
+   {id:'ff-rca',v:()=>FRETE_RCA?.nome||''},
+   {id:'ff-idcliente',v:()=>(document.getElementById('fi-idcliente')?.value||'').trim()},
+   {id:'ff-filial',v:()=>(document.getElementById('fi-filial')?.value||'').trim()},
+   {id:'ff-cep',v:()=>(document.getElementById('fi-cep')?.value||'').trim()},
+  ].forEach(r=>{if(!r.v()){document.getElementById(r.id).classList.add('invalid');ok=false;}});
+  if(!ok) document.querySelector('#st-frete .field.invalid')?.scrollIntoView({behavior:'smooth',block:'center'});
+  return ok;
+}
+
+async function submitFrete(){
+  if(!validateFrete()) return;
+  await initFretelista();
+  const btn=document.getElementById('btn-frete-sub');
+  const lbl=document.getElementById('btn-frete-lbl');
+  btn.disabled=true; lbl.textContent='Criando card...';
+  const nome  =document.getElementById('fi-nome').value.trim();
+  const idcli =document.getElementById('fi-idcliente').value.trim();
+  const filial=document.getElementById('fi-filial').value.trim();
+  const cep   =document.getElementById('fi-cep').value.trim();
+  const link  =document.getElementById('fi-link').value.trim();
+  const desc  =document.getElementById('fi-desc').value.trim();
+  const rca   =FRETE_RCA.nome;
+  const eq    =FRETE_EQUIPE.nome;
+  const descCard=[
+    `👤 RCA: ${rca}`,
+    `🏷️ Equipe: ${FRETE_EQUIPE.emoji} ${eq}`,
+    `🆔 ID Cliente: ${idcli}`,
+    `🏬 Filial de Origem: ${filial}`,
+    `📮 CEP: ${cep}`,
+    link&&`🔗 Link do Orçamento: ${link}`,
+    desc&&`\n📋 Observações:\n${desc}`,
+    `---`,
+    `📝 Criado por: ${USER_EMAIL||'—'}`,
+  ].filter(Boolean).join('\n');
+  const etFrete=LABELS_ALL.find(l=>l.name.toUpperCase().includes('FRETE'));
+  const etEq=LABELS_ALL.find(l=>isEtiquetaEquipe(l.name)&&
+    l.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .includes(eq.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+  const labelIds=[etEq?.id,etFrete?.id].filter(Boolean);
+  try{
+    const body=new URLSearchParams({idList:FRETE_LISTA_ID,name:nome,desc:descCard,idLabels:labelIds.join(','),pos:'bottom'});
+    const card=await trello('/cards',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+    const cfMap={'RCA':rca,'ID(INTEGRADOR)':idcli,'CRIADO POR':USER_EMAIL||''};
+    if(link) cfMap['LINK']=link;
+    await Promise.allSettled(Object.entries(cfMap).map(([n,v])=>{
+      if(!v) return Promise.resolve();
+      const cfId=CF[n]||Object.entries(CF).find(([k])=>k.includes(n.split(' ')[0]))?.[1];
+      if(!cfId) return Promise.resolve();
+      return trello(`/card/${card.id}/customField/${cfId}/item`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:{text:String(v)}})});
+    }));
+    try{await trello(`/cards/${card.id}/actions/comments`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({text:`🚚 *Solicitação de frete criada por:* ${USER_EMAIL||'—'}`}).toString()});}catch(_){}
+    document.getElementById('frete-success-link').href=card.url;
+    document.getElementById('frete-success-link').textContent=card.shortUrl||card.url;
+    document.getElementById('frete-form-body').style.display='none';
+    document.getElementById('st-frete-success').classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    alert(`Erro ao criar card de frete:\n${e.message}`);
+    btn.disabled=false; lbl.textContent='🚚 Solicitar Frete';
+  }
+}
+
+function resetFrete(){
+  FRETE_EQUIPE=null; FRETE_RCA=null; FRETE_RCA_TEMP=null;
+  ['fi-nome','fi-idcliente','fi-filial','fi-cep','fi-link','fi-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('[id^="feq-"]').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('#st-frete .field').forEach(f=>f.classList.remove('invalid'));
+  document.getElementById('frca-display-name').textContent='Selecionar consultor...';
+  document.getElementById('frca-display-name').className='rca-placeholder';
+  document.getElementById('frca-display-eq').textContent='';
+  document.getElementById('btn-frete-sub').disabled=false;
+  document.getElementById('btn-frete-lbl').textContent='🚚 Solicitar Frete';
+  document.getElementById('frete-preview-content').innerHTML='<div class="preview-empty">Preencha os campos para ver a prévia.</div>';
+  document.getElementById('st-frete-success').classList.remove('on');
+  document.getElementById('frete-form-body').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+init();
+</script>
+<!-- MODAL RCA CADASTRO -->
+<div id="crca-modal-bg" onclick="if(event.target===this)closeCadastroRCAModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px">
+  <div id="crca-modal" style="background:var(--surface);border:2px solid var(--ink);border-radius:10px;width:100%;max-width:580px;max-height:80vh;display:flex;flex-direction:column;box-shadow:6px 6px 0 var(--ink);animation:popIn .2s cubic-bezier(.34,1.56,.64,1)">
+    <div class="rca-modal-head">
+      <h3>Selecionar RCA — Cadastro</h3>
+      <input class="rca-search" type="text" id="crca-search" placeholder="Buscar consultor..." oninput="filterCadRCAModal(this.value)">
+    </div>
+    <div class="rca-modal-body" id="crca-modal-body"></div>
+    <div class="rca-modal-foot">
+      <div class="rca-selected-label">Selecionado: <strong id="crca-sel-label">—</strong></div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn-cancel-rca" onclick="closeCadastroRCAModal()">Cancelar</button>
+        <button class="btn-confirm-rca" onclick="confirmCadRCA()">Confirmar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+<script>
+// ═══════════════════════════════════
+// CADASTRO — estado
+// ═══════════════════════════════════
+let CAD_LISTA_ID = null;
+let CAD_EQUIPE   = null;
+let CAD_RCA      = null;
+let CAD_RCA_TEMP = null;
+
+function showCadastro(){
+  document.getElementById('st-form').classList.add('off');
+  document.getElementById('st-cadastro').classList.add('on');
+  document.getElementById('st-cadastro-success').classList.remove('on');
+  document.getElementById('cadastro-form-body').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function hideCadastro(){
+  document.getElementById('st-cadastro').classList.remove('on');
+  document.getElementById('st-form').classList.remove('off');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function initCadLista(){
+  if(CAD_LISTA_ID) return;
+  try{
+    const listas=await trello(`/boards/${BOARD}/lists?filter=open&fields=id,name`);
+    const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+    const lst=listas.find(l=>{const n=norm(l.name);return n==='CADASTRO'||n.startsWith('CADASTRO');});
+    CAD_LISTA_ID=lst?lst.id:LISTA_ID;
+  }catch(_){ CAD_LISTA_ID=LISTA_ID; }
+}
+function selectCadastroEquipe(nome,emoji){
+  CAD_EQUIPE={nome,emoji};
+  document.querySelectorAll('[id^="ceq-"]').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('ceq-'+nome.toLowerCase())?.classList.add('sel');
+  filterCadRCAModal(document.getElementById('crca-search')?.value||'');
+  document.getElementById('fc-equipe').classList.remove('invalid');
+  updateCadastroPreview();
+}
+function openCadastroRCAModal(){
+  CAD_RCA_TEMP=CAD_RCA?{...CAD_RCA}:null;
+  renderCadRCAModal('');
+  document.getElementById('crca-modal-bg').style.display='flex';
+  setTimeout(()=>document.getElementById('crca-search').focus(),100);
+}
+function closeCadastroRCAModal(){
+  document.getElementById('crca-modal-bg').style.display='none';
+  document.getElementById('crca-search').value='';
+  CAD_RCA_TEMP=null;
+}
+function confirmCadRCA(){
+  if(!CAD_RCA_TEMP){alert('Selecione um consultor.');return;}
+  CAD_RCA={...CAD_RCA_TEMP};
+  document.getElementById('crca-display-name').textContent=CAD_RCA.nome;
+  document.getElementById('crca-display-name').classList.remove('rca-placeholder');
+  document.getElementById('crca-display-eq').textContent=(EQ_EMOJI[CAD_RCA.eq]||'')+' '+CAD_RCA.eq;
+  document.getElementById('fc-rca').classList.remove('invalid');
+  closeCadastroRCAModal(); updateCadastroPreview();
+}
+function selectCadRCATemp(nome,eq){
+  CAD_RCA_TEMP={nome,eq};
+  document.querySelectorAll('#crca-modal .rca-name-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('crcab-'+nome.replace(/\s/g,'_'))?.classList.add('active');
+  document.getElementById('crca-sel-label').textContent=nome;
+}
+function renderCadRCAModal(filtro){
+  const q=filtro.toUpperCase().trim();
+  const equipes=CAD_EQUIPE?[CAD_EQUIPE.nome]:Object.keys(RCAS_POR_EQUIPE);
+  let html='';
+  equipes.forEach(eq=>{
+    const lista=RCAS_POR_EQUIPE[eq]||[];
+    const filtrado=q?lista.filter(n=>n.toUpperCase().includes(q)):lista;
+    if(!filtrado.length) return;
+    html+='<div class="rca-eq-group"><div class="rca-eq-title">'+(EQ_EMOJI[eq]||'')+' '+eq+'</div><div class="rca-names-grid">'+
+      filtrado.map(n=>{
+        const id='crcab-'+n.replace(/\s/g,'_');
+        const active=CAD_RCA_TEMP&&CAD_RCA_TEMP.nome===n?'active':'';
+        return '<button class="rca-name-btn '+active+'" id="'+id+'" onclick="selectCadRCATemp(\''+n+'\',\''+eq+'\')">'+n+'</button>';
+      }).join('')+'</div></div>';
+  });
+  document.getElementById('crca-modal-body').innerHTML=html||'<div style="text-align:center;padding:24px;color:var(--ink3)">Nenhum consultor encontrado.</div>';
+  document.getElementById('crca-sel-label').textContent=(CAD_RCA_TEMP&&CAD_RCA_TEMP.nome)||'—';
+}
+function filterCadRCAModal(q){ renderCadRCAModal(q); }
+
+function mascaraCPFCNPJ(el){
+  let v=el.value.replace(/\D/g,'').slice(0,14);
+  if(v.length<=11){
+    v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+    document.getElementById('cpfcnpj-hint').textContent='CPF detectado';
+  } else {
+    v=v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+    document.getElementById('cpfcnpj-hint').textContent='CNPJ detectado';
+  }
+  el.value=v;
+}
+
+function updateCadastroPreview(){
+  const titulo  =(document.getElementById('ci-titulo')?.value||'').trim();
+  const nome    =(document.getElementById('ci-nomecliente')?.value||'').trim();
+  const cpfcnpj =(document.getElementById('ci-cpfcnpj')?.value||'').trim();
+  const idint   =(document.getElementById('ci-idint')?.value||'').trim();
+  const obs     =(document.getElementById('ci-obs')?.value||'').trim();
+  const rca     =CAD_RCA?CAD_RCA.nome:'';
+  const eq      =CAD_EQUIPE?CAD_EQUIPE.nome:'';
+  const el=document.getElementById('cadastro-preview-content');
+  if(!titulo&&!nome&&!cpfcnpj){el.innerHTML='<div class="preview-empty">Preencha os campos para ver a prévia.</div>';return;}
+  const meta=[
+    rca     ?'<div class="preview-meta-item">RCA: <strong>'+rca+'</strong></div>':'',
+    eq      ?'<div class="preview-meta-item">Equipe: <strong>'+CAD_EQUIPE.emoji+' '+eq+'</strong></div>':'',
+    nome    ?'<div class="preview-meta-item">Cliente: <strong>'+nome+'</strong></div>':'',
+    cpfcnpj ?'<div class="preview-meta-item">CPF/CNPJ: <strong>'+cpfcnpj+'</strong></div>':'',
+    idint   ?'<div class="preview-meta-item">ID Integrador: <strong>'+idint+'</strong></div>':'',
+  ].filter(Boolean).join('');
+  el.innerHTML=(titulo?'<div class="preview-title">'+titulo+'</div>':'')+
+    '<div class="preview-tags"><span class="preview-tag" style="background:var(--blue-bg);color:var(--blue);border:1px solid #5a9fd444">📋 CADASTROS</span></div>'+
+    (obs?'<div style="font-size:.78rem;color:var(--ink2);line-height:1.6;margin-bottom:10px">'+obs+'</div>':'')+
+    (meta?'<div class="preview-meta">'+meta+'</div>':'');
+}
+
+function validateCadastro(){
+  let ok=true;
+  [{id:'fc-titulo',v:function(){return (document.getElementById('ci-titulo')&&document.getElementById('ci-titulo').value||'').trim();}},
+   {id:'fc-equipe',v:function(){return CAD_EQUIPE&&CAD_EQUIPE.nome||'';}},
+   {id:'fc-rca',v:function(){return CAD_RCA&&CAD_RCA.nome||'';}},
+   {id:'fc-nomecliente',v:function(){return (document.getElementById('ci-nomecliente')&&document.getElementById('ci-nomecliente').value||'').trim();}},
+   {id:'fc-cpfcnpj',v:function(){return (document.getElementById('ci-cpfcnpj')&&document.getElementById('ci-cpfcnpj').value||'').trim();}},
+   {id:'fc-idint',v:function(){return (document.getElementById('ci-idint')&&document.getElementById('ci-idint').value||'').trim();}},
+  ].forEach(function(r){if(!r.v()){document.getElementById(r.id).classList.add('invalid');ok=false;}});
+  if(!ok) document.querySelector('#st-cadastro .field.invalid')&&document.querySelector('#st-cadastro .field.invalid').scrollIntoView({behavior:'smooth',block:'center'});
+  return ok;
+}
+
+async function submitCadastro(){
+  if(!validateCadastro()) return;
+  await initCadLista();
+  const btn=document.getElementById('btn-cadastro-sub');
+  const lbl=document.getElementById('btn-cadastro-lbl');
+  btn.disabled=true; lbl.textContent='Criando card...';
+  const titulo  =document.getElementById('ci-titulo').value.trim();
+  const nome    =document.getElementById('ci-nomecliente').value.trim();
+  const cpfcnpj =document.getElementById('ci-cpfcnpj').value.trim();
+  const idint   =document.getElementById('ci-idint').value.trim();
+  const obs     =document.getElementById('ci-obs').value.trim();
+  const rca     =CAD_RCA.nome;
+  const eq      =CAD_EQUIPE.nome;
+  const descCard=[
+    'RCA: '+rca,
+    'Equipe: '+CAD_EQUIPE.emoji+' '+eq,
+    'Cliente: '+nome,
+    'CPF/CNPJ: '+cpfcnpj,
+    'ID Integrador: '+idint,
+    obs?'Observacoes: '+obs:'',
+    '---',
+    'Criado por: '+(USER_EMAIL||'—'),
+  ].filter(Boolean).join('\n');
+  const normFn=function(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();};
+  const etCad=LABELS_ALL.find(function(l){return normFn(l.name).includes('CADASTRO');});
+  const etEq =LABELS_ALL.find(function(l){return isEtiquetaEquipe(l.name)&&l.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(eq.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  const labelIds=[etEq&&etEq.id,etCad&&etCad.id].filter(Boolean);
+  try{
+    const body=new URLSearchParams({idList:CAD_LISTA_ID,name:titulo,desc:descCard,idLabels:labelIds.join(','),pos:'bottom'});
+    const card=await trello('/cards',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+    const cfMap={'RCA':rca,'ID(INTEGRADOR)':idint};
+    await Promise.allSettled(Object.entries(cfMap).map(function(entry){
+      const n=entry[0],v=entry[1];
+      if(!v) return Promise.resolve();
+      const cfId=CF[n]||Object.entries(CF).find(function(e){return e[0].includes(n.split(' ')[0]);})?.[1];
+      if(!cfId) return Promise.resolve();
+      return trello('/card/'+card.id+'/customField/'+cfId+'/item',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:{text:String(v)}})});
+    }));
+    document.getElementById('cadastro-success-link').href=card.url;
+    document.getElementById('cadastro-success-link').textContent=card.shortUrl||card.url;
+    document.getElementById('cadastro-form-body').style.display='none';
+    document.getElementById('st-cadastro-success').classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    alert('Erro ao criar card de cadastro:\n'+e.message);
+    btn.disabled=false; lbl.textContent='Solicitar Cadastro';
+  }
+}
+
+function resetCadastro(){
+  CAD_EQUIPE=null; CAD_RCA=null; CAD_RCA_TEMP=null;
+  ['ci-titulo','ci-nomecliente','ci-cpfcnpj','ci-idint','ci-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var h=document.getElementById('cpfcnpj-hint'); if(h) h.textContent='digita para detectar automaticamente';
+  document.querySelectorAll('[id^="ceq-"]').forEach(function(b){b.classList.remove('sel');});
+  document.querySelectorAll('#st-cadastro .field').forEach(function(f){f.classList.remove('invalid');});
+  var dn=document.getElementById('crca-display-name'); if(dn){dn.textContent='Selecionar consultor...';dn.className='rca-placeholder';}
+  var de=document.getElementById('crca-display-eq'); if(de) de.textContent='';
+  document.getElementById('btn-cadastro-sub').disabled=false;
+  document.getElementById('btn-cadastro-lbl').textContent='Solicitar Cadastro';
+  document.getElementById('cadastro-preview-content').innerHTML='<div class="preview-empty">Preencha os campos para ver a prévia.</div>';
+  document.getElementById('st-cadastro-success').classList.remove('on');
+  document.getElementById('cadastro-form-body').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
